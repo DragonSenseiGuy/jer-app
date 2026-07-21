@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="code/styles.css" />
+    <script type="module" src="code/main.js"></script>
+  </head>
+  <body>
+    <h1>
+      <span class="host"></span>
+      dashboard
+    </h1>
+
+    <dialog id="link-dialog">
+      <div class="dialog-header">
+        <h2 id="dialog-title">Add New Link</h2>
+        <button id="close-dialog-btn" type="button">✕</button>
+      </div>
+
+      <form id="add-link-form" autocomplete="off">
+        <div class="form-group">
+          <label for="path">Path:</label>
+          <p class="path-field">
+            <span class="path-prefix"><span class="host"></span>/</span
+            ><input type="text" id="path" name="path" required />
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label for="type">Link Type:</label>
+          <select id="type" name="type" required>
+            <option value="">Select a type...</option>
+            <option value="redirect">Redirect</option>
+            <option value="file">File</option>
+            <option value="text">Text</option>
+          </select>
+        </div>
+
+        <!-- Redirect-specific fields -->
+        <div id="redirect-fields" style="display: none">
+          <div class="form-group">
+            <label for="url">URL:</label>
+            <input
+              type="text"
+              id="url"
+              name="url"
+              placeholder="https://example.com"
+            />
+          </div>
+          <div class="form-group">
+            <label for="redirect-status">Status:</label>
+            <select id="redirect-status" name="redirect-status">
+              <option value="302" selected>302 Temporary</option>
+              <option value="301">301 Permanent</option>
+              <option value="307">307 Temporary (same method)</option>
+              <option value="308">308 Permanent (same method)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- File-specific fields -->
+        <div id="file-fields" style="display: none">
+          <div class="form-group" id="file-input-group" style="display: none">
+            <label for="file">File:</label>
+            <input type="file" id="file" name="file" />
+          </div>
+          <div class="form-group" id="text-input-group" style="display: none">
+            <label for="text">Text:</label>
+            <textarea
+              id="text"
+              name="text"
+              rows="5"
+              placeholder="Enter text content here"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label>Storage Locations:</label>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" name="locations" value="inline" />
+                <span>Inline in DB</span>
+              </label>
+            </div>
+            <div class="checkbox-group" id="dynamic-locations"></div>
+            <small id="locations-help">
+              Select one or more storage locations. Files will be uploaded to
+              all selected providers for redundancy.
+            </small>
+          </div>
+          <div class="form-group">
+            <label for="filename">Filename (optional):</label>
+            <input type="text" id="filename" name="filename" />
+            <small id="filename-help">
+              Leave empty to use the original filename
+            </small>
+          </div>
+          <div class="form-group">
+            <label for="content-type">Content-type (optional):</label>
+            <input
+              type="text"
+              id="content-type"
+              name="content-type"
+              list="content-types"
+              placeholder="text/plain"
+            />
+            <small id="content-type-help">
+              Defaults to text/plain for text content, browser-provided for
+              files
+            </small>
+            <datalist id="content-types">
+              <option value="text/plain"></option>
+              <option value="text/html"></option>
+              <option value="text/css"></option>
+              <option value="application/javascript"></option>
+              <option value="text/javascript"></option>
+              <option value="image/svg+xml"></option>
+              <option value="application/json"></option>
+              <option value="application/octet-stream"></option>
+              <option value="application/pdf"></option>
+              <option value="image/png"></option>
+              <option value="image/jpeg"></option>
+              <option value="image/gif"></option>
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label for="download">
+              <input type="checkbox" id="download" name="download" />
+              Force download
+            </label>
+            <small>Check to force download instead of viewing in browser</small>
+          </div>
+        </div>
+
+        <!-- Slack click notifications (applies to every link type) -->
+        <div class="form-group" id="notify-group">
+          <label for="notify">
+            <input type="checkbox" id="notify" name="notify" />
+            Notify on click
+          </label>
+          <small>Send a Slack message every time this link is clicked</small>
+          <div id="notify-controls" style="display: none; margin-top: 0.5rem">
+            <label for="notify-ping">
+              <input type="checkbox" id="notify-ping" name="notify-ping" />
+              Ping me at the start of the message
+            </label>
+            <small>
+              Mentions you (the configured Slack user) so it hits your
+              notifications
+            </small>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem">
+          <button type="submit" id="submit-btn">Create Link</button>
+          <button type="button" id="cancel-btn">Cancel</button>
+        </div>
+      </form>
+    </dialog>
+
+    <section>
+      <button id="open-dialog-btn" type="button">+ Add New Link</button>
+    </section>
+
+    <section>
+      <h2>Links</h2>
+      <div class="links-table-wrapper">
+        <table class="links-table">
+          <thead>
+            <tr>
+              <th>Path</th>
+              <th>Type</th>
+              <th>Value</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="links-tbody">
+            <tr>
+              <td colspan="4" style="text-align: center; color: #666">
+                Loading links...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <script>
+      document.querySelectorAll('.host').forEach((span) => {
+        span.textContent = location.host
+      })
+    </script>
+  </body>
+</html>

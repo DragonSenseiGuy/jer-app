@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "es2021",
+    "module": "es2022",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": ["es2021", "dom"],
+    "types": ["bun"]
+  },
+  "include": [
+    "public/**/*",
+    "src/**/*.ts",
+    "tests/**/*",
+    "shared-types.d.ts",
+    "worker-configuration.d.ts"
+  ]
+}
